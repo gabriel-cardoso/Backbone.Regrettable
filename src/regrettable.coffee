@@ -8,13 +8,13 @@ class Action
 
 class CollectionAddAction extends Action
   constructor: (@collection, @model) ->
-  undo: -> @collection.remove(@model)
-  redo: -> @collection.add(@model)
+  undo: -> @model.destroy()
+  redo: -> @model = @model.clone(); @collection.add(@model)
 
 class CollectionRemoveAction extends Action
   constructor: (@collection, @model) ->
-  undo: -> @collection.add(@model)
-  redo: -> @collection.remove(@model)
+  undo: -> @model = @model.clone(); @collection.add(@model)
+  redo: -> @model.destroy()
 
 class ModelPropertyUpdateAction extends Action
   constructor: (@model, @prop, @newVal, @oldVal ) ->
@@ -38,8 +38,6 @@ Backbone.Regrettable = (->
 
   undoStack: -> undoStack
   redoStack: -> redoStack
-  tracking: (t)->
-    tracking = t
   undo: ->
     return if undoStack.length == 0
     try
@@ -65,15 +63,19 @@ Backbone.Regrettable = (->
   reset: ->
     undoStack = []
     redoStack = []
-  bind: (o) ->
+  bind: (o, opts = {}) ->
+    ignore = opts.ignore || (-> false)
     if o instanceof Backbone.Model
-      o.on "change", (model) ->
-        undoStack.push(new ModelUpdateAction(model)) if tracking
+      o.on "change", (model, opts) ->
+        if tracking && not ignore(model, opts)
+          undoStack.push(new ModelUpdateAction(model))
     else if o instanceof Backbone.Collection
-      o.on "add", (prod) ->
-        undoStack.push(new CollectionAddAction(o, prod)) if tracking
-      o.on "remove", (prod) ->
-        undoStack.push(new CollectionRemoveAction(o, prod)) if tracking
+      o.on "add", (prod, coll, opts) ->
+        if tracking && not ignore(prod, coll, opts)
+          undoStack.push(new CollectionAddAction(o, prod))
+      o.on "remove", (prod, coll, opts) ->
+        if tracking && not ignore(prod, coll, opts)
+          undoStack.push(new CollectionRemoveAction(o, prod))
 )()
 
 
