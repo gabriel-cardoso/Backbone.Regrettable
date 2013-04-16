@@ -38,6 +38,7 @@ Backbone.Regrettable = (->
   composite = false
   redoing_caid = undefined
   undoing_caid = undefined
+  tracking: (t) -> tracking = t
   undoStack: -> undoStack
   redoStack: -> redoStack
   undo: (caid) ->
