@@ -9,11 +9,15 @@ class Action
 class CollectionAddAction extends Action
   constructor: (@collection, @model, @caid) ->
   undo: -> @model.destroy()
-  redo: -> @model = @model.clone(); @collection.add(@model)
+  redo: ->
+    @model = new @model.constructor(@model.omit("id"))
+    @collection.add(@model)
 
 class CollectionRemoveAction extends Action
   constructor: (@collection, @model, @caid) ->
-  undo: -> @model = @model.clone(); @collection.add(@model)
+  undo: ->
+    @model = new @model.constructor(@model.omit("id"))
+    @collection.add(@model)
   redo: -> @model.destroy()
 
 class ModelPropertyUpdateAction extends Action
